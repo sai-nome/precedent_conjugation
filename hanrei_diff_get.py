@@ -1,20 +1,19 @@
 from bs4 import BeautifulSoup
 import urllib.request as req
 import urllib
-import os,sys
+import os
 import time
-from urllib.parse import urljoin
 import glob
 from http.client import RemoteDisconnected
 
 # 現在のディレクトリ取得
 dirname = os.getcwd()
 # pdf出力用フォルダ
-output_pdf = dirname + "/output_pdf"
-# ページ数をカウント(処理を中断した箇所から再開)
-page = 739
+output_pdf = dirname + '/output_pdf'
+# ページ数をカウント(処理を中断した箇所から再開)→2024/04/05時点で1450page
+page = 0
 # 基本URL
-root_url = "https://www.courts.go.jp/"
+root_url = 'https://www.courts.go.jp/'
 
 # 繰り返し処理
 while True:
@@ -22,33 +21,33 @@ while True:
     # ページ数
     pdf_count = 0
     page += 1
-    print("page数: ",page)
+    print('page数: ',page)
     # 全件検索結果URL
-    url = root_url + "app/hanrei_jp/list1?page="+str(page)+"&sort=1&filter%5BjudgeDateMode%5D=2&filter%5BjudgeGengoFrom%5D=%E6%98%AD%E5%92%8C&filter%5BjudgeYearFrom%5D=1"
+    url = root_url + 'app/hanrei_jp/list1?page='+str(page)+'&sort=1&filter%5BjudgeDateMode%5D=2&filter%5BjudgeGengoFrom%5D=%E6%98%AD%E5%92%8C&filter%5BjudgeYearFrom%5D=1'
     try:
         res = req.urlopen(url)
-        soup = BeautifulSoup(res, "html.parser")
+        soup = BeautifulSoup(res, 'html.parser')
         time.sleep(2)
     except RemoteDisconnected:
-        print("RemoteDisconnectedのページ数: ",page)
+        print('RemoteDisconnectedのページ数: ',page)
         continue
-    result = soup.select("a[href]")
+    result = soup.select('a[href]')
     # リンクを取得したものをループで処理
     for link in result:
-        href = link.get("href")
+        href = link.get('href')
         # pdfのリンクがあれば処理を実行
         if href.endswith('.pdf'):
             pdf_count += 1
             # pdf用のURL作成
             pdf_url = root_url + href
             # 保存用ファイル名取得
-            file_name = href.split("/")[len(href.split("/"))-1]
+            file_name = href.split('/')[len(href.split('/'))-1]
             # 保存用ファイルパス作成
             pdf_path = os.path.join(output_pdf, file_name)
             
             # ファイル名リストを作って取り出して同じものがあるかのチェックを入れる
             # 出力用フォルダからファイルパスを抽出
-            file_path_list = glob.glob(output_pdf+"/*")
+            file_path_list = glob.glob(output_pdf+'/*')
             file_name_list = []
             # ファイルパスからファイル名を抽出しリスト化
             for file_path in file_path_list:
@@ -62,5 +61,5 @@ while True:
             # sys.exit(1)
     # pdfが存在しなかった場合、処理を終了する
     if (pdf_count == 0):
-        print("判例PDFがありません")
+        print('判例PDFがありません')
         break

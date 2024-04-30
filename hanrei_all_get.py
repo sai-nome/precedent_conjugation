@@ -3,7 +3,6 @@ import urllib.request as req
 import urllib
 import os
 import time
-from urllib.parse import urljoin
 
 # 現在のディレクトリ取得
 dirname = os.getcwd()
