@@ -3,7 +3,7 @@ from flask_cors import CORS
 import pdf_to_model
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 CORS(app)
 
@@ -16,8 +16,7 @@ def process_question():
         vector = pdf_to_model.PDFToVector()
         result = vector.main(query)
         # 結果を JSON 形式で返す
-        return jsonify(result[0])
-        # return jsonify({'result': 'Processed result of ' + query})
+        return jsonify(result)
     except Exception as e:
         logging.error("Error processing query: %s", str(e))
         return jsonify({'error': str(e)}), 500

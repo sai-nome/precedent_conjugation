@@ -6,7 +6,7 @@ from pdfminer.pdfdocument import PDFDocument
 from pdfminer.pdfpage import PDFPage
 import re
 import unicodedata
-import MeCab
+# import MeCab
 from typing import List, Dict
 import openai
 import numpy as np
@@ -224,7 +224,7 @@ class PDFToVector:
             # print(mecab_texts)
             # print('--------------------------------------------------')
             #  単語IDへの変換
-            token_texts = self.convert_text_to_token_ids(nor_texts, filename, vector_database)
+            vector_database = self.convert_text_to_token_ids(nor_texts, filename, vector_database)
             # print(token_texts)
             print('--------------------------------------------------')    
             if count >= 5:
@@ -255,11 +255,11 @@ class PDFToVector:
         results = sorted(results, key=lambda i: i['similarity'], reverse=True)
         # 以下で結果を表示
 
-        print("====Best Doc====")
-        print(f'title: {results[0]["title"]}')
-        print(f'body: {results[0]["body"]}')
+        # print("====Best Doc====")
+        # print(f'title: {results[0]["title"]}')
+        # print(f'body: {results[0]["body"]}')
 
-        return {results[0]}
+        return results[0]
 
     if __name__ == "__main__":
         main()
