@@ -6,9 +6,11 @@ from pdfminer.pdfdocument import PDFDocument
 from pdfminer.pdfpage import PDFPage
 import re
 import unicodedata
-from typing import Dict, List
+from typing import List
 import numpy as np
 from sentence_transformers import SentenceTransformer
+import json
+import shutil
 
 class PDFToVector:
     def __init__(self, model_name: str):
@@ -101,7 +103,7 @@ class PDFToVector:
         average_vector = np.mean(vectors, axis=0).tolist()
         return average_vector
 
-    def embed_sentence(self, text: str, filename: str, vector_database: Dict[str, str]):
+    def embed_sentence(self, text: str, vector_fol: str, filename: str, pdf_path: str, archive_pdf: str):
         """
         文章をベクトルに変換する関数
         Args:
@@ -112,14 +114,18 @@ class PDFToVector:
         # テキストを分割してベクトル化
         embedding = self.split_text2vector(text)
 
-        # ベクトルをデータベースに追加
-        vector_database.append({
+        # ファイル別に保存
+        vector = {
             'title': filename,
             'body': text,
             'embedding': embedding
-        })
+        }
+        vector_file = vector_fol + "/" + filename + ".json"
+        with open(vector_file, 'w', encoding='utf-8') as file:
+            json.dump(vector, file, ensure_ascii=False, indent=4)
 
-        return vector_database
+        # アーカイブ化
+        shutil.move(pdf_path, archive_pdf)
 
     def main(self):
         # 現在のディレクトリ取得
@@ -128,13 +134,20 @@ class PDFToVector:
         output_pdf = dirname + '/output_pdf'
         # 入力ファイル取得
         file_path_list = glob.glob(output_pdf+'/*.pdf')
-        # テスト用カウント
-        count = 0
+        # pdfアーカイブフォルダ
+        archive_pdf = output_pdf + '/archive'
         # テスト用ベクトルデータベース
         vector_database = []
+        # モデルファイル
+        # saved_model = dirname + '/models/proto_model'
+        # ベクトルフォルダ
+        vector_fol = dirname + '/vector_database'
+        # ベクトルデータベース
+        vector_db_json = vector_fol + '/vector_database.json'
+        # データベース取得
+        db_path_list = glob.glob(vector_fol+'/*.json')
 
         for pdf_path in file_path_list:
-            count += 1
             # テスト用pdfファイル
             # pdf_path = 'output_pdf/archive/035867_hanrei.pdf'
             filename = os.path.basename(pdf_path)
@@ -149,8 +162,17 @@ class PDFToVector:
             # 大文字小文字統一
             nor_texts = self.normalize_text(rem_spe_cha_texts)
             # 文章をベクトル変換
+            self.embed_sentence(nor_texts, vector_fol, filename, pdf_path, archive_pdf)
             print('filename: ', filename)    
-            vector_database = self.embed_sentence(nor_texts, filename, vector_database)
+
+        for db_path in db_path_list:
+            json_open = open(db_path, 'r')
+            json_load = json.load(json_open)
+            vector_database.append(json_load)
+
+        # ベクトルデータベースを格納
+        with open(vector_db_json, 'w', encoding='utf-8') as file:
+            json.dump(vector_database, file, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
     pdf_to_vector = PDFToVector(model_name='paraphrase-multilingual-mpnet-base-v2')

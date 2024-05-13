@@ -10,7 +10,7 @@ from http.client import RemoteDisconnected
 dirname = os.getcwd()
 # pdf出力用フォルダ
 output_pdf = dirname + '/output_pdf'
-# ページ数をカウント(処理を中断した箇所から再開)→2024/04/05時点で1450page
+# ページ数をカウント(処理を中断した箇所から再開)→2024/05/10時点で6550page
 page = 0
 # 基本URL
 root_url = 'https://www.courts.go.jp/'
@@ -34,6 +34,7 @@ while True:
     result = soup.select('a[href]')
     # リンクを取得したものをループで処理
     for link in result:
+        count = 0
         href = link.get('href')
         # pdfのリンクがあれば処理を実行
         if href.endswith('.pdf'):
@@ -54,10 +55,21 @@ while True:
                 file_name_list.append(os.path.basename(file_path))
             # 対象のpdfが出力用フォルダに存在しない場合、ダウンロードを行う
             if file_name not in file_name_list:
-                # 対象のpdfをダウンロードし、保存
-                urllib.request.urlretrieve(pdf_url, pdf_path)
-                # 連続アクセス防止
-                time.sleep(3)
+                for i in range(6,1):
+                    # 対象のpdfをダウンロードし、保存
+                    try:
+                        count += 1
+                        urllib.request.urlretrieve(pdf_url, pdf_path)
+                        print(pdf_url)
+                        # 連続アクセス防止
+                        time.sleep(3)
+                        break
+                    except Exception as e:
+                        if count <= 5:
+                            print("5回まで再処理を実施します: ", count)
+                            continue
+                        else:
+                            raise e 
             # sys.exit(1)
     # pdfが存在しなかった場合、処理を終了する
     if (pdf_count == 0):
