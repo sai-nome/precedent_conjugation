@@ -9,7 +9,7 @@ import torch
 import logging
 import os
 from openai import OpenAI
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 def load_or_download_embmodel(model_name: str, local_dir: str) -> SentenceTransformer:
     # ローカルディレクトリが存在しない場合は作成
@@ -171,7 +171,7 @@ class CosSimCalc:
 
         return ' '.join(responses)
 
-    def main(self, question, instruction):
+    def main(self, question, file_count, instruction):
         # 現在のディレクトリ取得
         dirname = os.getcwd()
         # ベクトルフォルダ
@@ -198,22 +198,30 @@ class CosSimCalc:
             try:
                 # print(item[0])
                 similarity = self.cosine_similarity(item['embedding'], np.array(embedding))
+                title = item['title']
                 body = item['body']
-                results.append({'body': body, 'similarity': similarity})
+                results.append({'title': title, 'body': body, 'similarity': similarity})
                 results = sorted(results, key=lambda x: x['similarity'], reverse=True)
             except:
                 continue
         
 
-        # コサイン類似度で降順（大きい順）にソート
-        text = results[0]['body']
+        returned_items = []
+        for i in range(file_count):
+            print(file_count)
+            text = results[i]['body']
 
-        # モデルを使って推論を行う
-        result = self.process_long_text(instruction, text)
+            # モデルを使って推論を行う
+            inference = self.process_long_text(instruction, text)
 
-        # 結果を表示
-        print(result)
-        return result
+            # 結果を表示
+            returned_item = {'title': results[i]['title'],
+                    'body': results[i]['body'],
+                    'similarity': results[i]['similarity'],
+                    'summary': inference
+                    }
+            returned_items.append(returned_item)
+        return returned_items
 
 if __name__ == '__main__':
     # 環境変数からAPIキーを取得
@@ -230,5 +238,6 @@ if __name__ == '__main__':
     emb_model = load_or_download_embmodel(emmbeding_model_name, emb_local_dir)
     cos_sim_calc = CosSimCalc(api_key, emb_model)
     question = '著作権について教えて下さい。'
+    file_count = 3
     instruction = '要約してください'
-    cos_sim_calc.main(question, instruction)
+    cos_sim_calc.main(question, file_count, instruction)
